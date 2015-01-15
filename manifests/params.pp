@@ -32,6 +32,7 @@ class puppetdashboard::params {
 
   $optimize_cron = false
   $clean_old_reports = false
+  $prune_orphans = false
 
   ### Application related parameters
 

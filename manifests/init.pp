@@ -47,6 +47,9 @@
 # [*clean_old_reports*]
 #   Clean up old reports
 #
+# [*prune_orphans*]
+#   Prune orphans from the DB
+#
 # [*config_file_db*]
 #   Path of the database.yml configuration file.
 #   Its content (for the production environment) is base on the above
@@ -271,6 +274,7 @@ class puppetdashboard (
   $no_longer_reporting_cutoff = params_lookup( 'no_longer_reporting_cutoff' ),
   $optimize_cron              = params_lookup( 'optimize_cron' ),
   $clean_old_reports          = params_lookup( 'clean_old_reports' ),
+  $prune_orphans              = params_lookup( 'prune_orphans' ),
   $setup_mysql                = params_lookup( 'setup_mysql' ),
   $config_file_db             = params_lookup( 'config_file_db' ),
   $template_db                = params_lookup( 'template_db' ),
@@ -517,7 +521,7 @@ class puppetdashboard (
   if $puppetdashboard::clean_old_reports == true {
     cron { 'clean-reports':
       ensure   => 'present',
-      command  => "cd ${data_dir} && /usr/bin/rake RAILS_ENV=production reports:prune upto=3 unit=mon",
+      command  => "cd ${data_dir} && /usr/bin/rake RAILS_ENV=production reports:prune upto=1 unit=mon",
       user     => 'root',
       hour     => 3,
       minute   => 30,
@@ -525,6 +529,18 @@ class puppetdashboard (
     }
   }
 
+  ### Prune orphaned records
+  ### TODO: Enable custom cron values
+  if $puppetdashboard::prune_orphans == true {
+    cron { 'prune-orphans':
+      ensure   => 'present',
+      command  => "cd ${data_dir} && /usr/bin/rake RAILS_ENV=production reports:prune:orphaned",
+      user     => 'root',
+      hour     => 4,
+      minute   => 30,
+      monthday => 1,
+    }
+  }
   ### Include custom class if $my_class is set
   if $puppetdashboard::my_class {
     include $puppetdashboard::my_class
