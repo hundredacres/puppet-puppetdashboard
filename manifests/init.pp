@@ -506,12 +506,12 @@ class puppetdashboard (
   ### TODO: Enable custom cron values
   if $puppetdashboard::optimize_cron == true {
     cron { 'optimize-db':
-      ensure  => 'present',
-      command => "cd ${data_dir} && /usr/bin/rake RAILS_ENV=production db:raw:optimize",
-      user    => 'root',
-      hour    => 2,
-      minute  => 30,
-      monthda => 1,
+      ensure   => 'present',
+      command  => "cd ${data_dir} && /usr/bin/rake RAILS_ENV=production db:raw:optimize",
+      user     => 'root',
+      hour     => 2,
+      minute   => 30,
+      monthday => 1,
     }
   }
 
