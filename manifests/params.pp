@@ -34,6 +34,10 @@ class puppetdashboard::params {
   $clean_old_reports = false
   $prune_orphans = false
 
+  $passenger = false
+  $passenger_type = 'apache'
+  $passenger_approot = '/etc/puppet/rack'
+
   ### Application related parameters
 
   $package = $::operatingsystem ? {
@@ -121,6 +125,7 @@ class puppetdashboard::params {
   $source_dir_purge = false
   $template = 'puppetdashboard/settings.yml'
   $template_db = 'puppetdashboard/database.yml'
+  $template_passenger = ''
   $options = ''
   $service_autorestart = true
   $version = 'present'

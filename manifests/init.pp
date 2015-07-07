@@ -58,6 +58,14 @@
 # [*template_db*]
 #   A custom temlate file to use for the database.yml instead of the default
 #
+# [*template_passenger*]
+#
+# [*passenger*]
+#
+# [*passenger_type*]
+#   The type of server that runs passenger (Default: apache)
+#   Can be one of: apache, nginx, ""
+#
 # Standard class parameters
 # Define the general class behaviour and customizations
 #
@@ -278,6 +286,10 @@ class puppetdashboard (
   $setup_mysql                = params_lookup( 'setup_mysql' ),
   $config_file_db             = params_lookup( 'config_file_db' ),
   $template_db                = params_lookup( 'template_db' ),
+  $template_passenger         = params_lookup( 'template_passenger' ),
+  $passenger                  = params_lookup( 'passenger'),
+  $passenger_type             = params_lookup( 'passenger_type' ),
+  $passenger_approot          = params_lookup( 'passenger_approot' ),
   $my_class                   = params_lookup( 'my_class' ),
   $source                     = params_lookup( 'source' ),
   $source_dir                 = params_lookup( 'source_dir' ),
@@ -322,6 +334,7 @@ class puppetdashboard (
   ) inherits puppetdashboard::params {
 
   $bool_setup_mysql=any2bool($setup_mysql)
+  $bool_passenger=any2bool($passenger)
   $bool_source_dir_purge=any2bool($source_dir_purge)
   $bool_service_autorestart=any2bool($service_autorestart)
   $bool_absent=any2bool($absent)
@@ -340,21 +353,27 @@ class puppetdashboard (
   }
 
   $manage_service_enable = $puppetdashboard::bool_disableboot ? {
-    true    => false,
-    default => $puppetdashboard::bool_disable ? {
-      true    => false,
-      default => $puppetdashboard::bool_absent ? {
-        true  => false,
-        false => true,
+    true        => false,
+    default     => $puppetdashboard::bool_disable ? {
+      true      => false,
+      default   => $puppetdashboard::bool_absent ? {
+        true    => false,
+        false   => $puppetdashboard::bool_passenger ? {
+          true  => false,
+          false => true,
+        },
       },
     },
   }
 
   $manage_service_ensure = $puppetdashboard::bool_disable ? {
-    true    => 'stopped',
-    default =>  $puppetdashboard::bool_absent ? {
+    true      => 'stopped',
+    default   => $puppetdashboard::bool_absent ? {
       true    => 'stopped',
-      default => 'running',
+      default => $bool_passenger ? {
+        true  => 'stopped',
+        false => 'running',
+      },
     },
   }
 
@@ -401,6 +420,14 @@ class puppetdashboard (
   $manage_file_content = $puppetdashboard::template ? {
     ''        => undef,
     default   => template($puppetdashboard::template),
+  }
+
+  $real_template_passenger = $template_passenger ? {
+    ''        => $passenger_type ? {
+      'nginx' => 'puppetdashboard/passenger/puppet-passenger-nginx.conf.erb',
+      default => 'puppetdashboard/passenger/puppet-passenger.conf.erb',
+    },
+    default => $template_passenger,
   }
 
   ### MySQL grants
@@ -541,6 +568,10 @@ class puppetdashboard (
       monthday => 1,
     }
   }
+
+  ### Manage Passenger
+  if $::puppetdashboard::bool_passenger == true { include puppetdashboard::passenger }
+
   ### Include custom class if $my_class is set
   if $puppetdashboard::my_class {
     include $puppetdashboard::my_class
